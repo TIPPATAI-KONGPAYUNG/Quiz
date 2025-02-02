@@ -6,6 +6,8 @@ A simple web application for managing books with features like adding, editing, 
 ✅ View books with pagination  
 ✅ Add, edit, and delete books  
 ✅ View detailed information about a book  
+✅ CRUD book
+✅ Add book and quantity to cart 
 ✅ Shopping cart functionality  
 ✅ API documentation with Swagger  
 
