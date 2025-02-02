@@ -3,12 +3,18 @@
 A simple web application for managing books with features like adding, editing, deleting, and viewing book details. This project also includes a shopping cart and API documentation using Swagger.
 
 ## 🌟 Features
-✅ View books with pagination  
+✅ View books with pagination 
+
 ✅ Add, edit, and delete books  
+
 ✅ View detailed information about a book  
+
 ✅ CRUD book
+
 ✅ Add book and quantity to cart 
-✅ Shopping cart functionality  
+
+✅ Shopping cart functionality 
+ 
 ✅ API documentation with Swagger  
 
 ---
