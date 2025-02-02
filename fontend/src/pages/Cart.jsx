@@ -20,7 +20,7 @@ const Cart = () => {
             console.error('Error updating quantity:', error);
         }
     };
-
+//test
     const decrease = async (bookid, quantity) => {
         if (quantity <= 1) return;
         const newQuantity = quantity - 1;
