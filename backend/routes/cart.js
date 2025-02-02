@@ -218,10 +218,70 @@ router.put("/update-cart", async (req, res) => {
  *         description: Internal Server Error
  */
 
+const DISCOUNTS = { 2: 0.10, 3: 0.20, 4: 0.30, 5: 0.40, 6: 0.50, 7: 0.60 };
+
+const calculateTotal = async () => {
+    const carts = await Cart.find();
+    let totalBasePrice = 0;
+    let totalDiscount = 0;
+    let totalPrice = 0;
+    let bookCount = {};
+
+    carts.forEach(item => {
+        for (let i = 0; i < item.quantity; i++) {
+            bookCount[item.title] = (bookCount[item.title] || 0) + 1;
+        }
+    });
+
+    while (Object.values(bookCount).some(qty => qty > 0)) {
+        let uniqueCount = Object.keys(bookCount).length;
+        let basePrice = 0;
+        carts.forEach(item => {
+            if (bookCount[item.title] > 0) {
+                basePrice += item.price;
+            }
+        });
+
+        let discount = DISCOUNTS[uniqueCount] || 0;
+        let discountAmount = basePrice * discount;
+
+        totalBasePrice += basePrice;
+        totalDiscount += discountAmount;
+        totalPrice += basePrice - discountAmount;
+
+        for (let title in bookCount) {
+            if (bookCount[title] > 0) {
+                bookCount[title]--;
+                if (bookCount[title] === 0) {
+                    delete bookCount[title];
+                }
+            }
+        }
+    }
+
+    return { totalBasePrice, totalDiscount, totalPrice, discountPercent: (totalDiscount / totalBasePrice) * 100 };
+};
+
+/**
+ * @swagger
+ * /api/v1/get-cart:
+ *   get:
+ *     summary: Get all books in cart
+ *     tags:
+ *       - Carts
+ *     description: Retrieve a list of all books in cart
+ *     responses:
+ *       200:
+ *         description: A list of books in cart
+ *       500:
+ *         description: Internal Server Error
+ */
+
 router.get('/get-cart', async (req, res) => {
     try {
         const carts = await Cart.find();
-        res.json({ status: "Success", data: carts });
+        const totals = await calculateTotal();
+        res.json({ status: "Success", data: carts, totals });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

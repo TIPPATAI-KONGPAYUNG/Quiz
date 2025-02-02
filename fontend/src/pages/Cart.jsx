@@ -9,17 +9,10 @@ const Cart = () => {
     const [DiscontPrice, setDiscontPrice] = useState(0);
     const [Price, setPrice] = useState(0);
 
-    const DISCOUNTS = { 2: 0.10, 3: 0.20, 4: 0.30, 5: 0.40, 6: 0.50, 7: 0.60 };
-
     const increase = async (bookid, quantity) => {
         const newQuantity = quantity + 1;
-
         try {
-            await axios.put('http://localhost:1000/api/v1/update-cart', {
-                bookid,
-                quantity: newQuantity,
-            });
-
+            await axios.put('http://localhost:1000/api/v1/update-cart', { bookid, quantity: newQuantity });
             setCartData(prevData => prevData.map(item =>
                 item.bookid === bookid ? { ...item, quantity: newQuantity } : item
             ));
@@ -30,15 +23,9 @@ const Cart = () => {
 
     const decrease = async (bookid, quantity) => {
         if (quantity <= 1) return;
-
         const newQuantity = quantity - 1;
-
         try {
-            await axios.put('http://localhost:1000/api/v1/update-cart', {
-                bookid,
-                quantity: newQuantity,
-            });
-
+            await axios.put('http://localhost:1000/api/v1/update-cart', { bookid, quantity: newQuantity });
             setCartData(prevData => prevData.map(item =>
                 item.bookid === bookid ? { ...item, quantity: newQuantity } : item
             ));
@@ -50,7 +37,6 @@ const Cart = () => {
     const deleteItem = async (bookid) => {
         try {
             await axios.delete(`http://localhost:1000/api/v1/remove-from-cart/${bookid}`);
-
             setCartData(prevData => prevData.filter(item => item.bookid !== bookid));
         } catch (error) {
             console.error('Error deleting item:', error);
@@ -61,73 +47,32 @@ const Cart = () => {
         try {
             await axios.delete(`http://localhost:1000/api/v1/remove-cart`);
             setCartData([]);
+            setTotal(0);
+            setDiscont(0);
+            setDiscontPrice(0);
+            setPrice(0);
         } catch (error) {
             console.error('Error deleting cart:', error);
         }
     };
 
-    const calculateTotal = () => {
-        let totalBasePrice = 0;
-        let totalDiscount = 0;
-        let totalPrice = 0;
-    
-        let bookCount = {};
-
-        cartData?.forEach(item => {
-            for (let i = 0; i < item.quantity; i++) {
-                bookCount[item.title] = (bookCount[item.title] || 0) + 1;
-            }
-        });
-
-        while (Object.values(bookCount).some(qty => qty > 0)) {
-            let uniqueCount = Object.keys(bookCount).length;
-            let basePrice = 0;
-            cartData?.forEach(item => {
-                if (bookCount[item.title] > 0) {
-                    basePrice += item.price; 
-                }
-            });
-
-            let discount = DISCOUNTS[uniqueCount] || 0;
-            let discountAmount = basePrice * discount;
-
-            totalBasePrice += basePrice;
-            totalDiscount += discountAmount;
-            totalPrice += basePrice - discountAmount;
-
-            for (let title in bookCount) {
-                if (bookCount[title] > 0) {
-                    bookCount[title]--;
-                    if (bookCount[title] === 0) {
-                        delete bookCount[title];
-                    }
-                }
-            }
-        }
-    
-        setTotal(totalBasePrice);
-        setDiscontPrice(totalDiscount);
-        setPrice(totalPrice);
-        setDiscont((totalDiscount / totalBasePrice) * 100);
-    };
- 
     useEffect(() => {
         const fetchCart = async () => {
             try {
                 const response = await axios.get("http://localhost:1000/api/v1/get-cart");
                 setCartData(response.data.data);
+
+                const totals = response.data.totals;
+                setTotal(totals.totalBasePrice);
+                setDiscontPrice(totals.totalDiscount);
+                setPrice(totals.totalPrice);
+                setDiscont(totals.discountPercent);
             } catch (error) {
                 console.error("Error fetching cart data:", error);
             }
         };
         fetchCart();
     }, []);
-
-    useEffect(() => {
-        console.log("Cart Data Updated:", cartData);
-        if (cartData) calculateTotal();
-    }, [cartData]);
-    
 
     return (
         <div className='bg-zinc-900 min-h-screen h-auto px-12'>
@@ -202,42 +147,27 @@ const Cart = () => {
                                 Total
                             </h1>
                             <div className='flex flex-row justify-between mt-4'>
-                                <h1 className='text-zinc-100 text-xl'>
-                                    Price Total:
-                                </h1>
-                                <h2 className='text-zinc-100 text-xl font-semibold'>
-                                    <span className="mr-1">{Total}</span><span>THB</span>
-                                </h2>
+                                <h1 className='text-zinc-100 text-xl'>Price Total:</h1>
+                                <h2 className='text-zinc-100 text-xl font-semibold'>{Total} THB</h2>
                             </div>
 
                             <div className='flex flex-row justify-between mt-4'>
-                                <h1 className='text-zinc-100 text-xl'>
-                                Discount:
-                                </h1>
-                                <h2 className='text-zinc-100 text-xl font-semibold'>
-                                    <span className="mr-1">{Discont.toPrecision(3)}</span><span>%</span>
-                                </h2>
-                            </div>
-                            <div className='flex flex-row justify-between mt-4'>
-                                <h1 className='text-zinc-100 text-xl'>
-                                Discount Price:
-                                </h1>
-                                <h2 className='text-red-500 text-xl font-semibold'>
-                                    <span className="mr-1">{DiscontPrice}</span><span>BTH</span>
-                                </h2>
+                                <h1 className='text-zinc-100 text-xl'>Discount:</h1>
+                                <h2 className='text-zinc-100 text-xl font-semibold'>{Discont.toPrecision(3)}%</h2>
                             </div>
 
                             <div className='flex flex-row justify-between mt-4'>
-                                <h1 className='text-zinc-100 text-xl'>
-                                    Price:
-                                </h1>
-                                <h2 className='text-red-100 text-3xl font-semibold'>
-                                    <span className="mr-1">{Price}</span><span>BTH</span>
-                                </h2>
+                                <h1 className='text-zinc-100 text-xl'>Discount Price:</h1>
+                                <h2 className='text-red-500 text-xl font-semibold'>{DiscontPrice} THB</h2>
+                            </div>
+
+                            <div className='flex flex-row justify-between mt-4'>
+                                <h1 className='text-zinc-100 text-xl'>Price:</h1>
+                                <h2 className='text-red-100 text-3xl font-semibold'>{Price} THB</h2>
                             </div>
                         </div>
                     </div>
-                    <div className="flex justify-center  pb-4 md:justify-end mt-4">
+                    <div className="flex justify-center pb-4 md:justify-end mt-4">
                         <button
                             onClick={() => deleteCart()}
                             className="w-60 px-6 py-3 border-2 border-yellow-100 text-yellow-100 font-semibold rounded-lg hover:bg-yellow-100 hover:text-zinc-600 transition duration-300 relative"
@@ -245,7 +175,6 @@ const Cart = () => {
                             Confirm
                         </button>
                     </div>
-
                 </>
             )}
         </div>
